@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>H&V Wallet — Dompet Keuangan & Bekal Pasangan</title>
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="H&V Wallet" />
+
+  <!-- Embedded SVG Icon & Dynamic PWA Manifest (Agar tetap jalan dalam 1 file tunggal) -->
+  <link id="app-icon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23a7f3d0'/%3E%3Cstop offset='100%25' stop-color='%23fef3c7'/%3E%3C/linearGradient%3E%3ClinearGradient id='wallet' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2334d399'/%3E%3Cstop offset='100%25' stop-color='%230d9488'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='120' fill='url(%23bg)'/%3E%3Ccircle cx='340' cy='145' r='46' fill='%23fbbf24' stroke='%23f59e0b' stroke-width='8'/%3E%3Ctext x='340' y='160' font-family='sans-serif' font-weight='bold' font-size='42' fill='%2392400e' text-anchor='middle'%3ERp%3C/text%3E%3Crect x='106' y='170' width='300' height='210' rx='56' fill='url(%23wallet)'/%3E%3Crect x='316' y='240' width='106' height='72' rx='28' fill='%23fef08a' stroke='%23f59e0b' stroke-width='6'/%3E%3Ccircle cx='354' cy='276' r='14' fill='%23d97706'/%3E%3Ccircle cx='185' cy='260' r='16' fill='%23064e3b'/%3E%3Ccircle cx='190' cy='254' r='5' fill='%23ffffff'/%3E%3Ccircle cx='265' cy='260' r='16' fill='%23064e3b'/%3E%3Ccircle cx='270' cy='254' r='5' fill='%23ffffff'/%3E%3Cellipse cx='165' cy='286' rx='14' ry='8' fill='%23fda4af' opacity='0.8'/%3E%3Cellipse cx='285' cy='286' rx='14' ry='8' fill='%23fda4af' opacity='0.8'/%3E%3Cpath d='M 210 282 Q 225 300 240 282' fill='none' stroke='%23064e3b' stroke-width='8' stroke-linecap='round'/%3E%3Cpath d='M 165 130 C 165 112 140 112 140 130 C 140 148 165 164 165 164 C 165 164 190 148 190 130 C 190 112 165 112 165 130 Z' fill='%23fb7185'/%3E%3Ctext x='256' y='446' font-family='sans-serif' font-weight='800' font-size='48' fill='%230f766e' text-anchor='middle'%3EH%26amp;V Wallet%3C/text%3E%3C/svg%3E" />
+  <link id="manifest-link" rel="manifest" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; -webkit-tap-highlight-color: transparent; }
+    .tab-active { color: #0f766e; border-bottom: 3px solid #0f766e; font-weight: 700; }
+    .card-shadow { box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+  </style>
+</head>
+<body class="min-h-screen pb-24">
+
+  <!-- Top Header -->
+  <header class="bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 text-white sticky top-0 z-30 shadow-md">
+    <div class="max-w-5xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center font-extrabold text-lg border border-white/30">
+          H&amp;V
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-base sm:text-lg leading-tight">H&amp;V Wallet</h1>
+            <span id="sync-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-900">Mode Lokal</span>
+          </div>
+          <p class="text-xs text-teal-100">Sinkronisasi Real-Time Antar Perangkat</p>
+        </div>
+      </div>
+
+      <!-- User Switcher & Cloud Sync Button -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="bg-black/20 p-1 rounded-xl flex items-center text-xs font-semibold">
+          <button onclick="setActiveUser('Hafidz')" id="btn-user-hafidz" class="px-2.5 py-1.5 rounded-lg transition bg-white text-teal-800 shadow-sm">
+            👨🏻 Mas Hafidz
+          </button>
+          <button onclick="setActiveUser('Vinna')" id="btn-user-vinna" class="px-2.5 py-1.5 rounded-lg transition text-white/90 hover:text-white">
+            👩🏻 Mbak Vinna
+          </button>
+        </div>
+        <button onclick="openSyncModal()" class="text-xs bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold px-3 py-1.5 rounded-xl shadow-sm transition flex items-center gap-1">
+          ☁️ Sinkronisasi
+        </button>
+        <button onclick="resetToBlank()" title="Mulai dari Nol (Hapus Contoh)" class="text-xs bg-white/15 hover:bg-white/25 px-2.5 py-1.5 rounded-xl border border-white/20 transition">
+          Kosongkan
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white text-slate-600 border-b border-slate-200 overflow-x-auto">
+      <div class="max-w-5xl mx-auto px-2 flex items-center justify-between sm:justify-start sm:gap-4 text-xs sm:text-sm whitespace-nowrap">
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="py-3 px-2.5 tab-active transition">📊 Beranda</button>
+        <button onclick="switchTab('bekal')" id="tab-bekal" class="py-3 px-2.5 hover:text-teal-700 transition">🍱 Inspirasi Bekal</button>
+        <button onclick="switchTab('transactions')" id="tab-transactions" class="py-3 px-2.5 hover:text-teal-700 transition">💸 Transaksi</button>
+        <button onclick="switchTab('planner')" id="tab-planner" class="py-3 px-2.5 hover:text-teal-700 transition">⚖️ Alokasi &amp; Impian</button>
+        <button onclick="switchTab('checklist')" id="tab-checklist" class="py-3 px-2.5 hover:text-teal-700 transition">🛒 Belanja &amp; Tagihan</button>
+        <button onclick="switchTab('wealth')" id="tab-wealth" class="py-3 px-2.5 hover:text-teal-700 transition">🏦 Hutang &amp; Aset</button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Cloud Sync Modal -->
+  <div id="sync-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">☁️</span>
+          <h3 class="font-extrabold text-slate-900 text-lg">Sinkronisasi Online Berdua</h3>
+        </div>
+        <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Hubungkan aplikasi di HP Anda, HP Mbak Vinna, atau perangkat siapapun yang memiliki akses internet menggunakan <strong>Kode Ruang Keluarga (Room Key)</strong> yang sama. Setiap catatan otomatis tersinkronisasi secara <em>real-time</em>!
+      </p>
+
+      <div class="bg-teal-50/80 border border-teal-200 p-3.5 rounded-2xl space-y-2">
+        <label class="block text-xs font-bold text-teal-900">Kode Ruang Keluarga (Minimal 5 karakter unik):</label>
+        <div class="flex gap-2">
+          <input type="text" id="sync-room-input" placeholder="Contoh: hv-malang-2026-aman" class="flex-1 bg-white border border-teal-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-800" />
+          <button onclick="generateRandomRoom()" type="button" class="bg-teal-100 hover:bg-teal-200 text-teal-800 text-xs font-bold px-3 rounded-xl">Acak</button>
+        </div>
+        <p class="text-[11px] text-teal-700">💡 Gunakan kombinasi rahasia agar hanya Anda dan pasangan yang dapat mengakses ruang data ini.</p>
+      </div>
+
+      <div id="sync-status-box" class="text-xs bg-slate-100 p-3 rounded-xl text-slate-600 font-medium">
+        Status: Belum terhubung ke ruang cloud.
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2 pt-1">
+        <button onclick="connectCloudRoom()" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-extrabold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow transition">
+          🔗 Hubungkan &amp; Sinkronkan
+        </button>
+        <button onclick="copyInviteLink()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-extrabold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow transition">
+          📋 Salin Link Undangan
+        </button>
+      </div>
+      <div class="text-center">
+        <button onclick="disconnectCloudRoom()" class="text-[11px] text-rose-600 hover:underline font-semibold">Putuskan Sinkronisasi (Kembali ke Lokal)</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-5xl mx-auto px-4 pt-5 space-y-6">
+
+    <!-- Filter Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-3 rounded-2xl border border-slate-200/80 card-shadow">
+      <div class="flex items-center gap-2 text-xs sm:text-sm">
+        <span class="text-slate-500 font-medium">Tampilan Data:</span>
+        <select id="view-filter" onchange="renderAll()" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          <option value="ALL">💑 Gabungan Berdua</option>
+          <option value="Hafidz">👨🏻 Khusus Mas Hafidz</option>
+          <option value="Vinna">👩🏻 Khusus Mbak Vinna</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-slate-500">
+        <span id="room-pill" class="hidden bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2.5 py-1 rounded-lg">☁️ Sync Aktif</span>
+        <span>Mencatat sebagai: <span id="active-user-label" class="font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg">Mas Hafidz</span></span>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 1: DASHBOARD ==================== -->
+    <section id="view-dashboard" class="space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 card-shadow">
+          <p class="text-xs font-medium text-slate-500">Saldo Kas Tersedia</p>
+          <p id="kpi-balance" class="text-xl sm:text-2xl font-extrabold text-slate-800 mt-1">Rp 0</p>
+          <p class="text-[11px] text-teal-600 mt-1 font-medium">Pemasukan dikurangi pengeluaran</p>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 card-shadow">
+          <p class="text-xs font-medium text-slate-500">Total Pemasukan</p>
+          <p id="kpi-income" class="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1">Rp 0</p>
+          <p id="kpi-income-split" class="text-[11px] text-slate-400 mt-1">Hafidz: Rp 0 • Vinna: Rp 0</p>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 card-shadow">
+          <p class="text-xs font-medium text-slate-500">Total Pengeluaran</p>
+          <p id="kpi-expense" class="text-xl sm:text-2xl font-extrabold text-rose-600 mt-1">Rp 0</p>
+          <p id="kpi-expense-split" class="text-[11px] text-slate-400 mt-1">Hafidz: Rp 0 • Vinna: Rp 0</p>
+        </div>
+        <div class="bg-gradient-to-br from-amber-50 to-yellow-100/70 p-4 rounded-2xl border border-amber-200/80 card-shadow">
+          <p class="text-xs font-semibold text-amber-800">Total Tabungan &amp; Emas</p>
+          <p id="kpi-assets" class="text-xl sm:text-2xl font-extrabold text-amber-900 mt-1">Rp 0</p>
+          <p id="kpi-gold-eq" class="text-[11px] text-amber-700 mt-1 font-medium">Setara ± 0,00 gr emas (Rp 2.549rb/gr)</p>
+        </div>
+      </div>
+
+      <!-- Mini Banner Inspirasi Bekal Hari Ini di Beranda -->
+      <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-amber-50 p-4 rounded-2xl border border-teal-200/80 card-shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider bg-teal-600 text-white px-2.5 py-0.5 rounded-full">🍱 Bekal Hari Ini</span>
+            <span id="dash-bekal-date" class="text-xs font-semibold text-teal-800"></span>
+          </div>
+          <h3 id="dash-bekal-title" class="font-extrabold text-slate-800 text-sm sm:text-base">Memuat menu bekal...</h3>
+          <p id="dash-bekal-meta" class="text-xs text-slate-600">Kalori &amp; Estimasi Belanja Pasar Malang</p>
+        </div>
+        <button onclick="switchTab('bekal')" class="shrink-0 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
+          Lihat Resep &amp; Belanja →
+        </button>
+      </div>
+
+      <!-- Financial Health Score & Detailed Indicators -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between">
+              <h2 class="font-bold text-slate-800 text-base">Indikator Kesehatan Finansial</h2>
+              <span id="health-badge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">Sehat</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Evaluasi otomatis berdasarkan rasio keuangan keluarga ideal.</p>
+            <div class="my-5 flex items-center gap-4">
+              <div class="relative w-24 h-24 rounded-full flex items-center justify-center border-8 border-teal-500 bg-teal-50/50 shrink-0" id="health-ring">
+                <div class="text-center">
+                  <span id="health-score" class="text-2xl font-extrabold text-teal-800">0</span>
+                  <span class="block text-[10px] text-teal-600 font-semibold">/ 100</span>
+                </div>
+              </div>
+              <div class="space-y-1.5 text-xs text-slate-600">
+                <p id="health-summary" class="font-medium text-slate-800 leading-relaxed">Memuat analisis kondisi keuangan Anda...</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/70 text-[11px] text-slate-600">
+            💡 <strong>Target Sehat:</strong> Tabungan minimal <strong>20%</strong>, cicilan hutang maksimal <strong>30%</strong>, dan biaya hidup maksimal <strong>50%</strong> dari pemasukan.
+          </div>
+        </div>
+
+        <!-- 4 Detailed Financial Ratios -->
+        <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-100 card-shadow space-y-4">
+          <h3 class="font-bold text-slate-800 text-base">Rincian 4 Rasio Kesehatan Keuangan</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="ratios-container"></div>
+        </div>
+      </div>
+
+      <!-- Smart Expense Reduction Advisor -->
+      <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-lg space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="text-[11px] uppercase tracking-wider font-bold text-amber-400">Asisten Penghematan Cerdas</span>
+            <h3 class="font-bold text-lg">Saran Pengeluaran yang Perlu Dikurangi</h3>
+          </div>
+          <span class="text-xs bg-white/10 px-3 py-1 rounded-full text-slate-200">Acuan Emas: Rp 2.549.000/gr</span>
+        </div>
+        <div id="advisor-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow">
+          <h3 class="font-bold text-slate-800 text-sm mb-3">Komposisi Pengeluaran per Kategori</h3>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="expenseChart"></canvas>
+          </div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow">
+          <h3 class="font-bold text-slate-800 text-sm mb-3">Perbandingan Pemasukan vs Pengeluaran</h3>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="cashflowChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB NEW: INSPIRASI BEKAL HARIAN ==================== -->
+    <section id="view-bekal" class="hidden space-y-6">
+      <div class="bg-gradient-to-r from-teal-700 via-emerald-700 to-teal-600 text-white p-5 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider bg-amber-400 text-slate-900 px-2.5 py-0.5 rounded-full">Update Otomatis Harian</span>
+            <span id="bekal-today-label" class="text-xs text-teal-100 font-medium"></span>
+          </div>
+          <h2 class="font-extrabold text-xl sm:text-2xl mt-1">🍱 Inspirasi Bekal Berdua Hari Ini</h2>
+          <p class="text-xs sm:text-sm text-teal-100 mt-0.5">Estimasi harga bahan disesuaikan dengan harga pasar tradisional &amp; sayur di <strong>Kabupaten Malang</strong> (untuk 2 porsi bekal).</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="prevBekalDay()" class="bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-xs font-bold border border-white/20 transition">← Kemarin</button>
+          <button onclick="resetBekalToday()" class="bg-white text-teal-800 px-3 py-2 rounded-xl text-xs font-extrabold shadow-sm transition">Hari Ini</button>
+          <button onclick="nextBekalDay()" class="bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-xs font-bold border border-white/20 transition">Besok →</button>
+        </div>
+      </div>
+
+      <div id="bekal-detail-container" class="space-y-5"></div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow space-y-4">
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">📅 Rotasi Menu Bekal Mingguan (Otomatis Berganti Setiap Hari)</h3>
+          <p class="text-xs text-slate-500">Klik salah satu menu di bawah jika ingin mengintip resep &amp; harga belanjanya lebih dulu.</p>
+        </div>
+        <div id="bekal-weekly-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: TRANSACTIONS ==================== -->
+    <section id="view-transactions" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-slate-800 text-base">Catat Pemasukan / Pengeluaran Baru</h2>
+          <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+            <button type="button" onclick="setTxType('expense')" id="tx-type-expense" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white shadow-sm transition">- Pengeluaran</button>
+            <button type="button" onclick="setTxType('income')" id="tx-type-income" class="px-3 py-1.5 rounded-lg text-slate-600 transition">+ Pemasukan</button>
+          </div>
+        </div>
+
+        <form onsubmit="addTransaction(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Pelaku Transaksi</label>
+            <select id="tx-user" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium">
+              <option value="Hafidz">👨🏻 Mas Hafidz</option>
+              <option value="Vinna">👩🏻 Mbak Vinna</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori</label>
+            <select id="tx-category" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nominal (Rp)</label>
+            <input type="number" id="tx-amount" required min="100" placeholder="Contoh: 50000" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan</label>
+            <input type="text" id="tx-note" required placeholder="Contoh: Belanja sayur &amp; lauk" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-xl text-sm shadow transition">
+              Simpan Transaksi
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-slate-800 text-base">Riwayat Transaksi Keluarga</h3>
+          <span id="tx-count" class="text-xs font-semibold text-slate-500">0 transaksi</span>
+        </div>
+        <div id="tx-list" class="divide-y divide-slate-100"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: ALOKASI GAJI & DANA IMPIAN ==================== -->
+    <section id="view-planner" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="text-xs font-bold text-teal-600 uppercase tracking-wider">Fitur Cerdas Pasangan</span>
+            <h2 class="font-bold text-slate-800 text-base">Simulasi &amp; Eksekusi Alokasi Pemasukan (50 / 30 / 20)</h2>
+          </div>
+          <span class="text-xs bg-teal-50 text-teal-700 font-semibold px-3 py-1 rounded-full">Otomatisasi Pos Keuangan</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end bg-slate-50 p-4 rounded-2xl border border-slate-200/70">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Masukkan Pemasukan Baru (Rp)</label>
+            <input type="number" id="alloc-income" value="5000000" oninput="calculateAllocation()" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-800" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Penerima Pemasukan</label>
+            <select id="alloc-user" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold">
+              <option value="Hafidz">👨🏻 Mas Hafidz</option>
+              <option value="Vinna">👩🏻 Mbak Vinna</option>
+            </select>
+          </div>
+          <div>
+            <button onclick="applyAllocation()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow transition">
+              ✨ Terapkan ke Tabungan &amp; Emas
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="alloc-cards"></div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow space-y-4">
+        <div>
+          <h2 class="font-bold text-slate-800 text-base">🎯 Wishlist &amp; Dana Impian Berdua</h2>
+          <p class="text-xs text-slate-500">Pantau progres target bersama lengkap dengan porsi kontribusi Mas Hafidz &amp; Mbak Vinna.</p>
+        </div>
+
+        <form onsubmit="addGoal(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70">
+          <input type="text" id="goal-name" required placeholder="Nama Impian (misal: Mobil Keluarga)" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <input type="number" id="goal-target" required min="100000" placeholder="Target Dana (Rp)" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <input type="number" id="goal-saved" required min="0" placeholder="Terkumpul Awal (Rp)" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-xl text-sm shadow transition">
+            + Tambah Impian
+          </button>
+        </form>
+
+        <div id="goals-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: SHARED CHECKLIST & BILLS ==================== -->
+    <section id="view-checklist" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow space-y-4">
+          <div>
+            <h2 class="font-bold text-slate-800 text-base">🛒 Daftar Belanja Sinkron Berdua</h2>
+            <p class="text-xs text-slate-500">Mbak Vinna catat kebutuhan dapur, Mas Hafidz tinggal centang saat dibeli di pasar/toko!</p>
+          </div>
+
+          <form onsubmit="addShoppingItem(event)" class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="shop-name" required placeholder="Nama barang (misal: Beras 5kg, Telur)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+            <input type="number" id="shop-est" required min="1000" placeholder="Est. Harga (Rp)" class="w-full sm:w-36 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+            <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-xl text-sm">Tambah</button>
+          </form>
+
+          <div id="shopping-list" class="divide-y divide-slate-100"></div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow space-y-4">
+          <div>
+            <h2 class="font-bold text-slate-800 text-base">📅 Pengingat Tagihan Rutin Bulanan</h2>
+            <p class="text-xs text-slate-500">Cegah lupa bayar tagihan listrik, Wi-Fi, kuota, atau iuran bulanan.</p>
+          </div>
+
+          <form onsubmit="addBillItem(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input type="text" id="bill-name" required placeholder="Nama Tagihan (misal: Listrik)" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+            <input type="number" id="bill-amount" required min="1000" placeholder="Nominal (Rp)" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+            <div class="flex gap-2">
+              <input type="number" id="bill-due" required min="1" max="31" placeholder="Tgl" class="w-16 bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-sm text-center" />
+              <button type="submit" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-2 rounded-xl text-sm">+ Tagihan</button>
+            </div>
+          </form>
+
+          <div id="bills-list" class="divide-y divide-slate-100"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: WEALTH, DEBT & EMERGENCY FUND ==================== -->
+    <section id="view-wealth" class="hidden space-y-6">
+      <div class="bg-gradient-to-r from-teal-800 to-emerald-700 text-white p-5 rounded-2xl shadow-md space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="text-xs uppercase tracking-wider font-bold text-teal-200">Proteksi Keluarga</span>
+            <h2 class="font-bold text-lg">🛡️ Kalkulator Dana Darurat Pasangan</h2>
+          </div>
+          <select id="ef-multiplier" onchange="renderAll()" class="bg-white/15 border border-white/30 text-white text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none">
+            <option value="3" class="text-slate-800">Target 3x Pengeluaran (Minimal)</option>
+            <option value="6" selected class="text-slate-800">Target 6x Pengeluaran (Ideal Menikah)</option>
+            <option value="12" class="text-slate-800">Target 12x Pengeluaran (Sangat Aman)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+          <div class="bg-white/10 p-3.5 rounded-xl">
+            <p class="text-xs text-teal-100">Target Dana Darurat</p>
+            <p id="ef-target-val" class="text-lg font-extrabold mt-0.5">Rp 0</p>
+          </div>
+          <div class="bg-white/10 p-3.5 rounded-xl">
+            <p class="text-xs text-teal-100">Dana Darurat Terkumpul</p>
+            <p id="ef-current-val" class="text-lg font-extrabold text-amber-300 mt-0.5">Rp 0</p>
+          </div>
+          <div class="bg-white/10 p-3.5 rounded-xl">
+            <p class="text-xs text-teal-100">Estimasi Tercapai</p>
+            <p id="ef-eta-val" class="text-sm font-bold mt-1">Menghitung...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow space-y-4">
+        <div>
+          <h2 class="font-bold text-slate-800 text-base">📈 Portofolio Tabungan &amp; Investasi Keluarga</h2>
+          <p class="text-xs text-slate-500">Acuan harga Tabungan Emas Pegadaian saat ini: <strong>Rp 2.549.000 / gram</strong>.</p>
+        </div>
+
+        <form onsubmit="addAsset(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70">
+          <input type="text" id="asset-name" required placeholder="Nama Aset (misal: Tabungan Emas)" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <select id="asset-type" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm">
+            <option value="Emas">🥇 Tabungan Emas Pegadaian</option>
+            <option value="Darurat">🛡️ Rekening Dana Darurat</option>
+            <option value="Tabungan">🏦 Tabungan / Deposito</option>
+            <option value="Reksadana">📊 Reksadana / SBN</option>
+          </select>
+          <input type="number" id="asset-amount" required min="1000" placeholder="Nilai Saat Ini (Rp)" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-xl text-sm shadow transition">
+            + Tambah Aset
+          </button>
+        </form>
+
+        <div id="assets-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 card-shadow space-y-4">
+        <div>
+          <h2 class="font-bold text-slate-800 text-base">💳 Pelacak Hutang &amp; Cicilan</h2>
+          <p class="text-xs text-slate-500">Pantau sisa pokok hutang dan cicilan bulanan agar rasio tetap di bawah 30%.</p>
+        </div>
+
+        <form onsubmit="addDebt(event)" class="grid grid-cols-1 sm:grid-cols-5 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70">
+          <input type="text" id="debt-name" required placeholder="Nama Cicilan" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <input type="number" id="debt-total" required min="10000" placeholder="Total Awal (Rp)" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <input type="number" id="debt-paid" required min="0" placeholder="Sudah Dibayar (Rp)" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <input type="number" id="debt-monthly" required min="1000" placeholder="Cicilan/Bln (Rp)" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+          <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded-xl text-sm shadow transition">
+            + Tambah Cicilan
+          </button>
+        </form>
+
+        <div id="debts-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const GOLD_PRICE_PER_GRAM = 2549000;
+
+    // ==================== DYNAMIC PWA MANIFEST & OFFLINE CACHE ====================
+    (function setupPWA() {
+      const iconHref = document.getElementById('app-icon').getAttribute('href');
+      const manifestObj = {
+        name: "H&V Wallet — Dompet Keuangan & Bekal Pasangan",
+        short_name: "H&V Wallet",
+        description: "Aplikasi pencatatan keuangan sinkron real-time, inspirasi bekal harian Malang, dan tabungan emas.",
+        start_url: window.location.href,
+        display: "standalone",
+        background_color: "#f8fafc",
+        theme_color: "#0f766e",
+        orientation: "portrait",
+        icons: [{ src: iconHref, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }]
+      };
+      const blob = new Blob([JSON.stringify(manifestObj)], { type: 'application/json' });
+      document.getElementById('manifest-link').setAttribute('href', URL.createObjectURL(blob));
+    })();
+
+    // ==================== CLOUD REAL-TIME SYNC ENGINE (GUN.JS) ====================
+    let gun = null;
+    let cloudNode = null;
+    let currentRoom = localStorage.getItem('hv_wallet_room') || '';
+    let lastSyncedTimestamp = 0;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('room')) {
+      currentRoom = urlParams.get('room').trim();
+      localStorage.setItem('hv_wallet_room', currentRoom);
+    }
+
+    function initGun() {
+      if (typeof Gun === 'undefined') return;
+      gun = Gun([
+        'https://gun-manhattan.herokuapp.com/gun',
+        'https://relay.peer.ooo/gun',
+        'https://peer.wallie.io/gun'
+      ]);
+      if (currentRoom) {
+        bindCloudRoom(currentRoom, false);
+      }
+    }
+
+    function bindCloudRoom(roomKey, pushInitial = false) {
+      if (!gun || !roomKey) return;
+      currentRoom = roomKey;
+      localStorage.setItem('hv_wallet_room', roomKey);
+      cloudNode = gun.get('hv_wallet_family_v3').get(roomKey);
+
+      document.getElementById('sync-badge').textContent = '☁️ Online Sync';
+      document.getElementById('sync-badge').className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-300 text-emerald-950';
+      document.getElementById('room-pill').classList.remove('hidden');
+      document.getElementById('room-pill').textContent = '☁️ Ruang: ' + roomKey;
+      document.getElementById('sync-room-input').value = roomKey;
+      document.getElementById('sync-status-box').textContent = 'Status: Terhubung aktif ke ruang "' + roomKey + '". Setiap perubahan otomatis tersinkron ke semua perangkat!';
+
+      if (pushInitial) {
+        pushStateToCloud();
+      }
+
+      cloudNode.on((data) => {
+        if (!data || !data.payload) return;
+        const incomingTs = Number(data.updatedAt || 0);
+        if (incomingTs > lastSyncedTimestamp) {
+          try {
+            const parsed = JSON.parse(data.payload);
+            const keepUser = state.activeUser;
+            state = Object.assign({}, parsed, { activeUser: keepUser });
+            lastSyncedTimestamp = incomingTs;
+            localStorage.setItem('hv_wallet_v3', JSON.stringify(state));
+            renderAll();
+          } catch (e) {}
+        }
+      });
+    }
+
+    function pushStateToCloud() {
+      if (!cloudNode) return;
+      const now = Date.now();
+      lastSyncedTimestamp = now;
+      const payloadToSend = JSON.stringify({
+        txType: state.txType,
+        transactions: state.transactions,
+        goals: state.goals,
+        shopping: state.shopping,
+        bills: state.bills,
+        assets: state.assets,
+        debts: state.debts
+      });
+      cloudNode.put({ payload: payloadToSend, updatedAt: now });
+    }
+
+    function openSyncModal() {
+      document.getElementById('sync-modal').classList.remove('hidden');
+      if (currentRoom) document.getElementById('sync-room-input').value = currentRoom;
+    }
+
+    function closeSyncModal() {
+      document.getElementById('sync-modal').classList.add('hidden');
+    }
+
+    function generateRandomRoom() {
+      const rand = 'hv-' + Math.random().toString(36).substring(2, 7) + '-' + Math.random().toString(36).substring(2, 6);
+      document.getElementById('sync-room-input').value = rand;
+    }
+
+    function connectCloudRoom() {
+      const val = document.getElementById('sync-room-input').value.trim();
+      if (val.length < 5) {
+        alert('Masukkan minimal 5 karakter untuk Kode Ruang Keluarga.');
+        return;
+      }
+      bindCloudRoom(val, true);
+      alert('Berhasil terhubung ke Ruang "' + val + '"! Masukkan kode yang sama (atau kirim Link Undangan) ke HP Mbak Vinna agar data langsung menyatu.');
+      closeSyncModal();
+    }
+
+    function disconnectCloudRoom() {
+      localStorage.removeItem('hv_wallet_room');
+      currentRoom = '';
+      cloudNode = null;
+      document.getElementById('sync-badge').textContent = 'Mode Lokal';
+      document.getElementById('sync-badge').className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-slate-900';
+      document.getElementById('room-pill').classList.add('hidden');
+      document.getElementById('sync-status-box').textContent = 'Status: Diputuskan (Mode penyimpanan lokal perangkat).';
+    }
+
+    function copyInviteLink() {
+      const val = document.getElementById('sync-room-input').value.trim();
+      if (val.length < 5) {
+        alert('Isi dulu Kode Ruang Keluarga sebelum menyalin link undangan.');
+        return;
+      }
+      bindCloudRoom(val, true);
+      const baseUrl = window.location.origin + window.location.pathname;
+      const inviteUrl = baseUrl + '?room=' + encodeURIComponent(val);
+      navigator.clipboard.writeText(inviteUrl).then(() => {
+        alert('Link undangan tersalin!\n\n' + inviteUrl + '\n\nKirimkan link ini via WhatsApp ke pasangan Anda — saat dibuka, aplikasi langsung terhubung otomatis!');
+      }).catch(() => {
+        prompt('Salin link undangan berikut dan kirim ke pasangan Anda:', inviteUrl);
+      });
+    }
+
+    // ==================== BEKAL HARIAN DATABASE ====================
+    const BEKAL_MENUS = [
+      {
+        title: "Ayam Suwir Kemangi Pedas + Tumis Buncis Wortel + Nasi Putih",
+        calories: 560, protein: "34g", carbs: "62g", fat: "16g", prepTime: "25 Menit",
+        ingredients: [
+          { name: "Dada ayam fillet (250 gr)", price: 11500 },
+          { name: "Daun kemangi & cabai rawit (1 ikat + segenggam)", price: 3000 },
+          { name: "Buncis & wortel segar (200 gr)", price: 4000 },
+          { name: "Bawang merah, bawang putih, serai & bumbu", price: 3000 },
+          { name: "Beras 2 porsi + minyak & gas", price: 4500 }
+        ],
+        steps: [
+          "Rebus dada ayam hingga matang, suwir-suwir memanjang.",
+          "Tumis bumbu halus (bawang merah, bawang putih, cabai rawit, kemiri) dengan serai dan daun jeruk hingga harum.",
+          "Masukkan ayam suwir, beri garam, kaldu jamur, dan sedikit gula. Tambahkan daun kemangi sesaat sebelum diangkat.",
+          "Tumis irisan buncis dan wortel dengan bawang putih geprek selama 4 menit agar tetap renyah saat jam makan siang."
+        ]
+      },
+      {
+        title: "Telur Dadar Padang Tebal + Sayur Sop Bening Bakso + Sambal Bawang",
+        calories: 520, protein: "24g", carbs: "58g", fat: "20g", prepTime: "20 Menit",
+        ingredients: [
+          { name: "Telur ayam negeri (4 butir)", price: 7500 },
+          { name: "Bakso sapi (6 butir) + wortel, kentang, kubis", price: 8500 },
+          { name: "Daun bawang, seledri & kelapa parut sangrai", price: 2500 },
+          { name: "Cabai rawit, bawang putih & bumbu", price: 2500 },
+          { name: "Beras 2 porsi + minyak goreng", price: 4500 }
+        ],
+        steps: [
+          "Kocok 4 telur bersama irisan daun bawang, bawang merah, cabai giling halus, sedikit tepung beras (1 sdm) agar tebal, dan garam.",
+          "Goreng dengan api kecil sambil ditutup agar matang merata dan mengembang tebal, lalu potong menjadi 4 bagian.",
+          "Rebus air, masukkan potongan wortel, kentang, dan bakso. Bumbui bawang putih goreng halus, lada, dan garam, taburi seledri.",
+          "Ulek cabai rawit dan bawang putih mentah, siram dengan sedikit minyak panas."
+        ]
+      },
+      {
+        title: "Tongkol Suwir Pedas Manis + Oseng Tempe Kacang Panjang + Nasi Hangat",
+        calories: 545, protein: "36g", carbs: "60g", fat: "15g", prepTime: "25 Menit",
+        ingredients: [
+          { name: "Ikan tongkol pindang/segar (250 gr)", price: 10000 },
+          { name: "Tempe papan (1/2 papan) + kacang panjang (1 ikat)", price: 5000 },
+          { name: "Cabai merah, cabai rawit, tomat & kecap manis", price: 3500 },
+          { name: "Bawang merah, bawang putih & lengkuas", price: 2500 },
+          { name: "Beras 2 porsi + minyak goreng", price: 4500 }
+        ],
+        steps: [
+          "Goreng ikan tongkol sebentar agar tidak hancur, lalu suwir kasar dan buang durinya.",
+          "Tumis irisan bawang merah, bawang putih, cabai, dan tomat hingga layu. Masukkan tongkol suwir, beri kecap manis dan garam.",
+          "Potong dadu tempe lalu goreng setengah kering. Tumis bersama potongan kacang panjang dan sedikit saus tiram."
+        ]
+      },
+      {
+        title: "Ayam Teriyaki Saus Wijen + Brokoli Rebus + Telur Rebus",
+        calories: 580, protein: "38g", carbs: "59g", fat: "18g", prepTime: "20 Menit",
+        ingredients: [
+          { name: "Paha ayam fillet (250 gr)", price: 12000 },
+          { name: "Brokoli segar (1 bonggol kecil khas Malang)", price: 5500 },
+          { name: "Telur ayam (2 butir)", price: 3800 },
+          { name: "Saus teriyaki, bawang bombay & bawang putih", price: 4200 },
+          { name: "Beras 2 porsi", price: 4000 }
+        ],
+        steps: [
+          "Marinasi potongan paha ayam fillet dengan saus teriyaki, saus tiram, dan bawang putih parut selama 10 menit.",
+          "Masak ayam di teflon dengan sedikit minyak hingga kecokelatan dan saus mengental, masukkan irisan bawang bombay.",
+          "Rebus brokoli dan telur secara terpisah, tiriskan agar kotak bekal tidak berair."
+        ]
+      },
+      {
+        title: "Nasi Goreng Kampung Teri Medan + Telur Ceplok + Lalapan Timun",
+        calories: 570, protein: "25g", carbs: "68g", fat: "19g", prepTime: "15 Menit",
+        ingredients: [
+          { name: "Teri medan / teri nasi (50 gr)", price: 6000 },
+          { name: "Telur ayam (2 butir)", price: 3800 },
+          { name: "Sawi hijau / kubis & mentimun segar", price: 3500 },
+          { name: "Bumbu nasi goreng (bawang, cabai, terasi bakar)", price: 2700 },
+          { name: "Nasi putih dingin (2 porsi)", price: 4000 }
+        ],
+        steps: [
+          "Goreng teri hingga kering renyah, sisihkan sebagian untuk taburan atas.",
+          "Tumis bumbu halus (bawang merah, bawang putih, cabai rawit, sedikit terasi), masukkan sawi hijau dan nasi dingin.",
+          "Aduk rata dengan kecap asin dan kaldu bubuk hingga berasap harum. Sajikan dengan telur ceplok dan irisan timun."
+        ]
+      },
+      {
+        title: "Perkedel Kentang Daging Cincang + Tumis Kangkung Terasi + Tahu Goreng",
+        calories: 530, protein: "23g", carbs: "64g", fat: "18g", prepTime: "30 Menit",
+        ingredients: [
+          { name: "Kentang Malang (350 gr)", price: 6500 },
+          { name: "Ayam/daging cincang (100 gr) + tahu putih (4 buah)", price: 8500 },
+          { name: "Kangkung segar (2 ikat)", price: 4000 },
+          { name: "Telur (1 butir) & bumbu halus", price: 3500 },
+          { name: "Beras 2 porsi + minyak", price: 4500 }
+        ],
+        steps: [
+          "Goreng potongan kentang hingga empuk, lalu haluskan selagi hangat. Campur dengan daging cincang tumis, bawang goreng, lada, dan garam.",
+          "Bentuk bulat pipih, celupkan ke kocokan telur, lalu goreng hingga kuning keemasan.",
+          "Tumis kangkung dengan api besar bersama bawang putih, cabai, dan sedikit terasi selama 2 menit."
+        ]
+      },
+      {
+        title: "Ayam Goreng Lengkuas + Sayur Asem Segar + Tempe Mendoan",
+        calories: 590, protein: "35g", carbs: "65g", fat: "20g", prepTime: "30 Menit",
+        ingredients: [
+          { name: "Ayam potong (4 potong paha/dada)", price: 14000 },
+          { name: "Paket sayur asem (labu siam, kacang panjang, jagung)", price: 5000 },
+          { name: "Tempe (1 papan kecil) + tepung bumbu", price: 4000 },
+          { name: "Lengkuas parut, kunyit, ketumbar & asam jawa", price: 3000 },
+          { name: "Beras 2 porsi", price: 4000 }
+        ],
+        steps: [
+          "Ungkep ayam bersama bumbu halus dan lengkuas parut melimpah hingga air menyusut, lalu goreng ayam beserta remah lengkuasnya.",
+          "Rebus air dan bumbu sayur asem, masukkan jagung, labu siam, dan kacang panjang hingga matang segar.",
+          "Celupkan irisan tempe tipis ke adonan tepung berbumbu daun bawang, goreng setengah matang."
+        ]
+      }
+    ];
+
+    let bekalDayOffset = 0;
+
+    function getBekalIndex(offset = 0) {
+      const now = new Date();
+      const startOfYear = new Date(now.getFullYear(), 0, 0);
+      const dayOfYear = Math.floor((now - startOfYear) / (1000 * 60 * 60 * 24));
+      return (dayOfYear + offset + BEKAL_MENUS.length * 10) % BEKAL_MENUS.length;
+    }
+
+    function prevBekalDay() { bekalDayOffset--; renderBekal(); }
+    function nextBekalDay() { bekalDayOffset++; renderBekal(); }
+    function resetBekalToday() { bekalDayOffset = 0; renderBekal(); }
+    function selectBekalOffset(off) { bekalDayOffset = off; renderBekal(); }
+
+    function addBekalToShopping(idx) {
+      const menu = BEKAL_MENUS[idx];
+      menu.ingredients.forEach(item => {
+        state.shopping.unshift({
+          id: Date.now() + Math.random(),
+          name: '[Bekal] ' + item.name,
+          est: item.price,
+          addedBy: state.activeUser,
+          bought: false
+        });
+      });
+      saveState();
+      renderAll();
+      alert('Semua bahan "' + menu.title + '" (' + menu.ingredients.length + ' item) berhasil ditambahkan ke Daftar Belanja!');
+    }
+
+    function recordBekalExpense(idx) {
+      const menu = BEKAL_MENUS[idx];
+      const totalCost = menu.ingredients.reduce((s, i) => s + i.price, 0);
+      state.transactions.unshift({
+        id: Date.now(),
+        user: state.activeUser,
+        type: 'expense',
+        category: 'Belanja Dapur & Sembako',
+        amount: totalCost,
+        note: 'Belanja Bekal: ' + menu.title.split('+')[0].trim(),
+        date: new Date().toISOString().slice(0, 10)
+      });
+      saveState();
+      renderAll();
+      alert('Pengeluaran belanja bekal sebesar ' + formatRp(totalCost) + ' berhasil dicatat!');
+    }
+
+    function renderBekal() {
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + bekalDayOffset);
+      const dateStr = targetDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+
+      const todayMenu = BEKAL_MENUS[getBekalIndex(0)];
+      const todayCost = todayMenu.ingredients.reduce((s, i) => s + i.price, 0);
+
+      document.getElementById('dash-bekal-date').textContent = todayStr;
+      document.getElementById('dash-bekal-title').textContent = todayMenu.title;
+      document.getElementById('dash-bekal-meta').textContent = '🔥 ' + todayMenu.calories + ' kkal/porsi • 🛒 Est. Belanja Malang: ' + formatRp(todayCost) + ' (2 porsi)';
+
+      const idx = getBekalIndex(bekalDayOffset);
+      const menu = BEKAL_MENUS[idx];
+      const totalCost = menu.ingredients.reduce((s, i) => s + i.price, 0);
+
+      document.getElementById('bekal-today-label').textContent = dateStr;
+      document.getElementById('bekal-detail-container').innerHTML = `
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-100 card-shadow space-y-5">
+          <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <span class="text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full">${bekalDayOffset === 0 ? '✨ Menu Utama Hari Ini' : dateStr}</span>
+              <h3 class="font-extrabold text-slate-900 text-lg sm:text-xl mt-2">${menu.title}</h3>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 px-4 py-2.5 rounded-2xl text-right">
+              <p class="text-[11px] font-bold text-amber-800">Est. Belanja Pasar Malang</p>
+              <p class="text-lg font-extrabold text-amber-950">${formatRp(totalCost)}</p>
+              <p class="text-[10px] text-amber-700">Untuk 2 kotak bekal (${formatRp(Math.round(totalCost / 2))}/porsi)</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div class="bg-rose-50/70 border border-rose-100 p-3 rounded-xl text-center">
+              <p class="text-[11px] font-semibold text-rose-700">Kalori / Porsi</p>
+              <p class="text-base font-extrabold text-rose-950 mt-0.5">🔥 ${menu.calories} kkal</p>
+            </div>
+            <div class="bg-blue-50/70 border border-blue-100 p-3 rounded-xl text-center">
+              <p class="text-[11px] font-semibold text-blue-700">Protein</p>
+              <p class="text-base font-extrabold text-blue-950 mt-0.5">🥩 ${menu.protein}</p>
+            </div>
+            <div class="bg-amber-50/70 border border-amber-100 p-3 rounded-xl text-center">
+              <p class="text-[11px] font-semibold text-amber-700">Karbohidrat</p>
+              <p class="text-base font-extrabold text-amber-950 mt-0.5">🍚 ${menu.carbs}</p>
+            </div>
+            <div class="bg-emerald-50/70 border border-emerald-100 p-3 rounded-xl text-center">
+              <p class="text-[11px] font-semibold text-emerald-700">Lemak Sehat</p>
+              <p class="text-base font-extrabold text-emerald-950 mt-0.5">🥑 ${menu.fat}</p>
+            </div>
+            <div class="bg-slate-50 border border-slate-200/70 p-3 rounded-xl text-center col-span-2 sm:col-span-1">
+              <p class="text-[11px] font-semibold text-slate-600">Waktu Masak</p>
+              <p class="text-base font-extrabold text-slate-900 mt-0.5">⏱️ ${menu.prepTime}</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/70 space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="font-bold text-slate-800 text-sm">🛒 Rincian Bahan &amp; Harga Pasar Kab. Malang</h4>
+                <span class="text-xs font-extrabold text-teal-700">${formatRp(totalCost)}</span>
+              </div>
+              <ul class="divide-y divide-slate-200/70 text-xs">
+                ${menu.ingredients.map(ing => `
+                  <li class="py-2 flex justify-between items-center">
+                    <span class="text-slate-700 font-medium">${ing.name}</span>
+                    <span class="font-bold text-slate-900">${formatRp(ing.price)}</span>
+                  </li>
+                `).join('')}
+              </ul>
+              <div class="flex flex-col sm:flex-row gap-2 pt-2">
+                <button onclick="addBekalToShopping(${idx})" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded-xl text-xs shadow-sm transition">
+                  + Masukkan ke Daftar Belanja
+                </button>
+                <button onclick="recordBekalExpense(${idx})" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-3 rounded-xl text-xs shadow-sm transition">
+                  💸 Catat Langsung ke Pengeluaran
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <h4 class="font-bold text-slate-800 text-sm">👩🏻‍🍳 Langkah Memasak Praktis</h4>
+              <ol class="space-y-2.5 text-xs text-slate-700">
+                ${menu.steps.map((st, i) => `
+                  <li class="flex gap-2.5 items-start bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+                    <span class="w-5 h-5 rounded-full bg-teal-600 text-white font-bold flex items-center justify-center shrink-0 text-[11px]">${i + 1}</span>
+                    <span class="leading-relaxed">${st}</span>
+                  </li>
+                `).join('')}
+              </ol>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const weeklyHtml = [0, 1, 2, 3, 4, 5, 6].map(offset => {
+        const d = new Date();
+        d.setDate(d.getDate() + offset);
+        const labelDay = offset === 0 ? 'Hari Ini' : offset === 1 ? 'Besok' : d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+        const m = BEKAL_MENUS[getBekalIndex(offset)];
+        const cost = m.ingredients.reduce((s, i) => s + i.price, 0);
+        const active = offset === bekalDayOffset;
+        return `
+          <button onclick="selectBekalOffset(${offset})" class="text-left p-3.5 rounded-2xl border transition ${active ? 'border-teal-600 bg-teal-50/60 ring-2 ring-teal-500/20' : 'border-slate-200/80 bg-slate-50/40 hover:border-teal-400'}">
+            <div class="flex justify-between items-center">
+              <span class="text-[11px] font-extrabold ${offset === 0 ? 'text-teal-700' : 'text-slate-500'}">${labelDay}</span>
+              <span class="text-[11px] font-bold text-amber-700">${formatRp(cost)}</span>
+            </div>
+            <p class="text-xs font-bold text-slate-800 mt-1 line-clamp-2">${m.title}</p>
+            <p class="text-[11px] text-slate-500 mt-1">🔥 ${m.calories} kkal • ⏱️ ${m.prepTime}</p>
+          </button>
+        `;
+      }).join('');
+      document.getElementById('bekal-weekly-grid').innerHTML = weeklyHtml;
+    }
+
+    const CATEGORIES = {
+      expense: [
+        'Belanja Dapur & Sembako',
+        'Jajan & Kopi Berdua',
+        'Tagihan Listrik, Air & Kuota',
+        'Bensin & Perawatan Motor',
+        'Pupuk & Operasional Kebun',
+        'Kebutuhan Rumah Tangga',
+        'Kesehatan & Pribadi',
+        'Sedekah & Sosial',
+        'Cicilan & Kewajiban'
+      ],
+      income: [
+        'Gaji Utama',
+        'Hasil Panen Kebun',
+        'Laba Usaha Sampingan',
+        'Bonus & Tunjangan',
+        'Pemasukan Tambahan Lainnya'
+      ]
+    };
+
+    const defaultState = {
+      activeUser: 'Hafidz',
+      txType: 'expense',
+      transactions: [
+        { id: 1, user: 'Hafidz', type: 'income', category: 'Gaji Utama', amount: 4200000, note: 'Gaji bulanan', date: '2026-11-01' },
+        { id: 2, user: 'Vinna', type: 'income', category: 'Gaji Utama', amount: 3100000, note: 'Gaji bulanan', date: '2026-11-01' },
+        { id: 3, user: 'Hafidz', type: 'income', category: 'Hasil Panen Kebun', amount: 1450000, note: 'Panen cabai rawit', date: '2026-11-05' },
+        { id: 4, user: 'Vinna', type: 'expense', category: 'Belanja Dapur & Sembako', amount: 850000, note: 'Belanja mingguan & beras', date: '2026-11-06' },
+        { id: 5, user: 'Hafidz', type: 'expense', category: 'Jajan & Kopi Berdua', amount: 480000, note: 'Kuliner & ngopi akhir pekan', date: '2026-11-08' },
+        { id: 6, user: 'Hafidz', type: 'expense', category: 'Bensin & Perawatan Motor', amount: 320000, note: 'Pertalite & ganti oli', date: '2026-11-10' },
+        { id: 7, user: 'Vinna', type: 'expense', category: 'Tagihan Listrik, Air & Kuota', amount: 410000, note: 'Token listrik & paket data', date: '2026-11-12' },
+        { id: 8, user: 'Hafidz', type: 'expense', category: 'Pupuk & Operasional Kebun', amount: 390000, note: 'Pupuk susulan & perawatan', date: '2026-11-14' }
+      ],
+      goals: [
+        { id: 1, name: 'Dana Mobil Keluarga (< 50 Juta)', target: 45000000, hafidz: 11500000, vinna: 8500000 },
+        { id: 2, name: 'Renovasi & Perabot Rumah', target: 15000000, hafidz: 4500000, vinna: 4000000 }
+      ],
+      shopping: [
+        { id: 1, name: 'Beras 5 kg & Minyak Goreng 2L', est: 115000, addedBy: 'Vinna', bought: false },
+        { id: 2, name: 'Telur 1 kg, Ayam & Sayur Sop', est: 75000, addedBy: 'Vinna', bought: false },
+        { id: 3, name: 'Sabun Cuci & Kebutuhan Mandi', est: 65000, addedBy: 'Hafidz', bought: true }
+      ],
+      bills: [
+        { id: 1, name: 'Token Listrik Rumah', amount: 250000, dueDay: 20, paid: false },
+        { id: 2, name: 'Paket Internet & Kuota Berdua', amount: 160000, dueDay: 25, paid: false }
+      ],
+      assets: [
+        { id: 1, name: 'Tabungan Emas Pegadaian', type: 'Emas', amount: 7647000 },
+        { id: 2, name: 'Rekening Dana Darurat Keluarga', type: 'Darurat', amount: 12000000 },
+        { id: 3, name: 'Tabungan Bersama BCA / BRI', type: 'Tabungan', amount: 6500000 }
+      ],
+      debts: [
+        { id: 1, name: 'Cicilan Ringan Perabot', total: 6000000, paid: 3600000, monthly: 600000 }
+      ]
+    };
+
+    let state = JSON.parse(localStorage.getItem('hv_wallet_v3')) || JSON.parse(JSON.stringify(defaultState));
+    let expenseChartInstance = null;
+    let cashflowChartInstance = null;
+
+    function saveState() {
+      localStorage.setItem('hv_wallet_v3', JSON.stringify(state));
+      pushStateToCloud();
+    }
+
+    function formatRp(num) {
+      return 'Rp ' + Math.round(num || 0).toLocaleString('id-ID');
+    }
+
+    function resetToBlank() {
+      if (confirm('Kosongkan semua data contoh agar Anda dan Mbak Vinna bisa mulai mencatat dari nol?')) {
+        state = {
+          activeUser: state.activeUser,
+          txType: 'expense',
+          transactions: [],
+          goals: [],
+          shopping: [],
+          bills: [],
+          assets: [],
+          debts: []
+        };
+        saveState();
+        renderAll();
+      }
+    }
+
+    function setActiveUser(user) {
+      state.activeUser = user;
+      localStorage.setItem('hv_wallet_v3', JSON.stringify(state));
+      updateUserUI();
+    }
+
+    function updateUserUI() {
+      const isHafidz = state.activeUser === 'Hafidz';
+      document.getElementById('btn-user-hafidz').className = isHafidz
+        ? 'px-2.5 py-1.5 rounded-lg transition bg-white text-teal-800 shadow-sm'
+        : 'px-2.5 py-1.5 rounded-lg transition text-white/90 hover:text-white';
+      document.getElementById('btn-user-vinna').className = !isHafidz
+        ? 'px-2.5 py-1.5 rounded-lg transition bg-white text-teal-800 shadow-sm'
+        : 'px-2.5 py-1.5 rounded-lg transition text-white/90 hover:text-white';
+      document.getElementById('active-user-label').textContent = isHafidz ? 'Mas Hafidz' : 'Mbak Vinna';
+      document.getElementById('tx-user').value = state.activeUser;
+      document.getElementById('alloc-user').value = state.activeUser;
+    }
+
+    function switchTab(tab) {
+      ['dashboard', 'bekal', 'transactions', 'planner', 'checklist', 'wealth'].forEach(t => {
+        document.getElementById('view-' + t).classList.toggle('hidden', t !== tab);
+        document.getElementById('tab-' + t).classList.toggle('tab-active', t === tab);
+      });
+      if (tab === 'dashboard') renderCharts();
+      if (tab === 'bekal') renderBekal();
+    }
+
+    function setTxType(type) {
+      state.txType = type;
+      const isExp = type === 'expense';
+      document.getElementById('tx-type-expense').className = isExp
+        ? 'px-3 py-1.5 rounded-lg bg-rose-600 text-white shadow-sm transition'
+        : 'px-3 py-1.5 rounded-lg text-slate-600 transition';
+      document.getElementById('tx-type-income').className = !isExp
+        ? 'px-3 py-1.5 rounded-lg bg-emerald-600 text-white shadow-sm transition'
+        : 'px-3 py-1.5 rounded-lg text-slate-600 transition';
+
+      const catSelect = document.getElementById('tx-category');
+      catSelect.innerHTML = CATEGORIES[type].map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    function addTransaction(e) {
+      e.preventDefault();
+      const user = document.getElementById('tx-user').value;
+      const category = document.getElementById('tx-category').value;
+      const amount = Number(document.getElementById('tx-amount').value);
+      const note = document.getElementById('tx-note').value.trim();
+      if (!amount || !note) return;
+
+      state.transactions.unshift({
+        id: Date.now(),
+        user,
+        type: state.txType,
+        category,
+        amount,
+        note,
+        date: new Date().toISOString().slice(0, 10)
+      });
+      document.getElementById('tx-amount').value = '';
+      document.getElementById('tx-note').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function deleteTransaction(id) {
+      state.transactions = state.transactions.filter(t => t.id !== id);
+      saveState();
+      renderAll();
+    }
+
+    function calculateAllocation() {
+      const inc = Number(document.getElementById('alloc-income').value) || 0;
+      const needs = inc * 0.50;
+      const wants = inc * 0.30;
+      const saving = inc * 0.20;
+      const goldGrams = (saving / GOLD_PRICE_PER_GRAM).toFixed(2);
+
+      document.getElementById('alloc-cards').innerHTML = `
+        <div class="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-blue-700">50% Kebutuhan Pokok</span>
+            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">Wajib</span>
+          </div>
+          <p class="text-xl font-extrabold text-blue-950 mt-2">${formatRp(needs)}</p>
+          <p class="text-xs text-blue-700 mt-1">Belanja dapur, listrik, kuota, bensin, operasional kebun.</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-amber-700">30% Gaya Hidup &amp; Jajan</span>
+            <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">Fleksibel</span>
+          </div>
+          <p class="text-xl font-extrabold text-amber-950 mt-2">${formatRp(wants)}</p>
+          <p class="text-xs text-amber-700 mt-1">Kuliner berdua, kopi, hiburan akhir pekan, kebutuhan pribadi.</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-emerald-700">20% Tabungan &amp; Emas</span>
+            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">Masa Depan</span>
+          </div>
+          <p class="text-xl font-extrabold text-emerald-950 mt-2">${formatRp(saving)}</p>
+          <p class="text-xs text-emerald-700 mt-1">Setara <strong>± ${goldGrams} gr</strong> Tabungan Emas Pegadaian.</p>
+        </div>
+      `;
+    }
+
+    function applyAllocation() {
+      const inc = Number(document.getElementById('alloc-income').value) || 0;
+      const user = document.getElementById('alloc-user').value;
+      if (inc <= 0) return;
+      const saving = Math.round(inc * 0.20);
+
+      state.transactions.unshift({
+        id: Date.now(),
+        user,
+        type: 'income',
+        category: 'Gaji Utama',
+        amount: inc,
+        note: 'Pemasukan (Alokasi 50/30/20)',
+        date: new Date().toISOString().slice(0, 10)
+      });
+
+      const goldAsset = state.assets.find(a => a.type === 'Emas');
+      if (goldAsset) {
+        goldAsset.amount += saving;
+      } else {
+        state.assets.push({ id: Date.now() + 1, name: 'Tabungan Emas Pegadaian', type: 'Emas', amount: saving });
+      }
+      saveState();
+      renderAll();
+      alert('Berhasil! Pemasukan ' + formatRp(inc) + ' dicatat & ' + formatRp(saving) + ' (20%) otomatis ditambahkan ke Tabungan Emas.');
+    }
+
+    function addGoal(e) {
+      e.preventDefault();
+      const name = document.getElementById('goal-name').value.trim();
+      const target = Number(document.getElementById('goal-target').value);
+      const saved = Number(document.getElementById('goal-saved').value);
+      if (!name || !target) return;
+      const half = Math.round(saved / 2);
+      state.goals.push({ id: Date.now(), name, target, hafidz: half, vinna: saved - half });
+      document.getElementById('goal-name').value = '';
+      document.getElementById('goal-target').value = '';
+      document.getElementById('goal-saved').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function contributeGoal(id, who) {
+      const amt = Number(prompt('Tambah tabungan impian dari ' + (who === 'hafidz' ? 'Mas Hafidz' : 'Mbak Vinna') + ' (Rp):', '250000'));
+      if (!amt || amt <= 0) return;
+      const goal = state.goals.find(g => g.id === id);
+      if (goal) {
+        goal[who] += amt;
+        saveState();
+        renderAll();
+      }
+    }
+
+    function deleteGoal(id) {
+      state.goals = state.goals.filter(g => g.id !== id);
+      saveState();
+      renderAll();
+    }
+
+    function addShoppingItem(e) {
+      e.preventDefault();
+      const name = document.getElementById('shop-name').value.trim();
+      const est = Number(document.getElementById('shop-est').value);
+      if (!name) return;
+      state.shopping.unshift({ id: Date.now(), name, est, addedBy: state.activeUser, bought: false });
+      document.getElementById('shop-name').value = '';
+      document.getElementById('shop-est').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function toggleShopping(id) {
+      const item = state.shopping.find(s => s.id === id);
+      if (!item) return;
+      item.bought = !item.bought;
+      if (item.bought && confirm('Catat "' + item.name + '" (' + formatRp(item.est) + ') ke Pengeluaran Belanja Dapur?')) {
+        state.transactions.unshift({
+          id: Date.now(),
+          user: state.activeUser,
+          type: 'expense',
+          category: 'Belanja Dapur & Sembako',
+          amount: item.est,
+          note: 'Belanja: ' + item.name,
+          date: new Date().toISOString().slice(0, 10)
+        });
+      }
+      saveState();
+      renderAll();
+    }
+
+    function deleteShopping(id) {
+      state.shopping = state.shopping.filter(s => s.id !== id);
+      saveState();
+      renderAll();
+    }
+
+    function addBillItem(e) {
+      e.preventDefault();
+      const name = document.getElementById('bill-name').value.trim();
+      const amount = Number(document.getElementById('bill-amount').value);
+      const dueDay = Number(document.getElementById('bill-due').value);
+      if (!name || !amount) return;
+      state.bills.push({ id: Date.now(), name, amount, dueDay, paid: false });
+      document.getElementById('bill-name').value = '';
+      document.getElementById('bill-amount').value = '';
+      document.getElementById('bill-due').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function toggleBill(id) {
+      const bill = state.bills.find(b => b.id === id);
+      if (!bill) return;
+      bill.paid = !bill.paid;
+      if (bill.paid) {
+        state.transactions.unshift({
+          id: Date.now(),
+          user: state.activeUser,
+          type: 'expense',
+          category: 'Tagihan Listrik, Air & Kuota',
+          amount: bill.amount,
+          note: 'Bayar Tagihan: ' + bill.name,
+          date: new Date().toISOString().slice(0, 10)
+        });
+      }
+      saveState();
+      renderAll();
+    }
+
+    function addAsset(e) {
+      e.preventDefault();
+      const name = document.getElementById('asset-name').value.trim();
+      const type = document.getElementById('asset-type').value;
+      const amount = Number(document.getElementById('asset-amount').value);
+      if (!name || !amount) return;
+      state.assets.push({ id: Date.now(), name, type, amount });
+      document.getElementById('asset-name').value = '';
+      document.getElementById('asset-amount').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function topupAsset(id) {
+      const add = Number(prompt('Nominal penambahan saldo aset (Rp):', '500000'));
+      if (!add || add <= 0) return;
+      const asset = state.assets.find(a => a.id === id);
+      if (asset) {
+        asset.amount += add;
+        saveState();
+        renderAll();
+      }
+    }
+
+    function deleteAsset(id) {
+      state.assets = state.assets.filter(a => a.id !== id);
+      saveState();
+      renderAll();
+    }
+
+    function addDebt(e) {
+      e.preventDefault();
+      const name = document.getElementById('debt-name').value.trim();
+      const total = Number(document.getElementById('debt-total').value);
+      const paid = Number(document.getElementById('debt-paid').value);
+      const monthly = Number(document.getElementById('debt-monthly').value);
+      if (!name || !total) return;
+      state.debts.push({ id: Date.now(), name, total, paid, monthly });
+      document.getElementById('debt-name').value = '';
+      document.getElementById('debt-total').value = '';
+      document.getElementById('debt-paid').value = '';
+      document.getElementById('debt-monthly').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function payDebtInstallment(id) {
+      const debt = state.debts.find(d => d.id === id);
+      if (!debt) return;
+      const pay = Math.min(debt.monthly, debt.total - debt.paid);
+      if (pay <= 0) return;
+      debt.paid += pay;
+      state.transactions.unshift({
+        id: Date.now(),
+        user: state.activeUser,
+        type: 'expense',
+        category: 'Cicilan & Kewajiban',
+        amount: pay,
+        note: 'Bayar cicilan: ' + debt.name,
+        date: new Date().toISOString().slice(0, 10)
+      });
+      saveState();
+      renderAll();
+    }
+
+    function renderAll() {
+      const filter = document.getElementById('view-filter').value;
+      const filteredTx = filter === 'ALL' ? state.transactions : state.transactions.filter(t => t.user === filter);
+
+      const totalIncome = filteredTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+      const totalExpense = filteredTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+      const balance = totalIncome - totalExpense;
+
+      const incHafidz = state.transactions.filter(t => t.type === 'income' && t.user === 'Hafidz').reduce((s, t) => s + t.amount, 0);
+      const incVinna = state.transactions.filter(t => t.type === 'income' && t.user === 'Vinna').reduce((s, t) => s + t.amount, 0);
+      const expHafidz = state.transactions.filter(t => t.type === 'expense' && t.user === 'Hafidz').reduce((s, t) => s + t.amount, 0);
+      const expVinna = state.transactions.filter(t => t.type === 'expense' && t.user === 'Vinna').reduce((s, t) => s + t.amount, 0);
+
+      const totalAssets = state.assets.reduce((s, a) => s + a.amount, 0);
+      const emergencyAssets = state.assets.filter(a => a.type === 'Darurat').reduce((s, a) => s + a.amount, 0);
+      const monthlyDebt = state.debts.reduce((s, d) => s + (d.paid < d.total ? d.monthly : 0), 0);
+
+      document.getElementById('kpi-balance').textContent = formatRp(balance);
+      document.getElementById('kpi-income').textContent = formatRp(totalIncome);
+      document.getElementById('kpi-income-split').textContent = 'Hafidz: ' + formatRp(incHafidz) + ' • Vinna: ' + formatRp(incVinna);
+      document.getElementById('kpi-expense').textContent = formatRp(totalExpense);
+      document.getElementById('kpi-expense-split').textContent = 'Hafidz: ' + formatRp(expHafidz) + ' • Vinna: ' + formatRp(expVinna);
+      document.getElementById('kpi-assets').textContent = formatRp(totalAssets);
+      document.getElementById('kpi-gold-eq').textContent = 'Setara ± ' + (totalAssets / GOLD_PRICE_PER_GRAM).toFixed(2) + ' gr emas (Rp 2.549rb/gr)';
+
+      const savingRate = totalIncome > 0 ? Math.max(0, ((totalIncome - totalExpense) / totalIncome) * 100) : 0;
+      const debtRatio = totalIncome > 0 ? (monthlyDebt / totalIncome) * 100 : 0;
+      const livingRatio = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
+      const efMonths = totalExpense > 0 ? (emergencyAssets / totalExpense) : 0;
+
+      let score = 0;
+      if (totalIncome > 0) {
+        score += Math.min(30, (savingRate / 20) * 30);
+        score += debtRatio <= 30 ? 25 : Math.max(0, 25 - (debtRatio - 30));
+        score += livingRatio <= 60 ? 25 : Math.max(0, 25 - (livingRatio - 60));
+        score += Math.min(20, (efMonths / 6) * 20);
+      }
+      score = Math.round(score);
+
+      document.getElementById('health-score').textContent = score;
+      const badge = document.getElementById('health-badge');
+      const summary = document.getElementById('health-summary');
+      if (totalIncome === 0) {
+        badge.textContent = 'Belum Ada Data';
+        badge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600';
+        summary.textContent = 'Catat pemasukan dan pengeluaran pertama Anda untuk melihat skor kesehatan finansial.';
+      } else if (score >= 80) {
+        badge.textContent = 'Sangat Sehat';
+        badge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700';
+        summary.textContent = 'Arus kas keluarga sangat sehat! Surplus bulanan terjaga dan rasio cicilan aman terkendali.';
+      } else if (score >= 60) {
+        badge.textContent = 'Cukup Sehat';
+        badge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700';
+        summary.textContent = 'Keuangan cukup stabil, namun masih ada ruang untuk menekan pengeluaran konsumtif agar tabungan emas tumbuh lebih cepat.';
+      } else {
+        badge.textContent = 'Perlu Perhatian';
+        badge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700';
+        summary.textContent = 'Pengeluaran atau cicilan terlalu tinggi dibanding pemasukan. Segera kurangi pos non-prioritas.';
+      }
+
+      const ratios = [
+        { label: 'Rasio Tabungan (Surplus)', val: savingRate.toFixed(1) + '%', target: 'Ideal ≥ 20%', ok: savingRate >= 20, pct: Math.min(100, (savingRate / 30) * 100) },
+        { label: 'Rasio Cicilan Hutang', val: debtRatio.toFixed(1) + '%', target: 'Ideal ≤ 30%', ok: debtRatio <= 30, pct: Math.min(100, (debtRatio / 50) * 100) },
+        { label: 'Rasio Biaya Hidup', val: livingRatio.toFixed(1) + '%', target: 'Ideal ≤ 60%', ok: livingRatio <= 60, pct: Math.min(100, livingRatio) },
+        { label: 'Ketahanan Dana Darurat', val: efMonths.toFixed(1) + ' Bulan', target: 'Ideal ≥ 6 Bulan', ok: efMonths >= 6, pct: Math.min(100, (efMonths / 6) * 100) }
+      ];
+
+      document.getElementById('ratios-container').innerHTML = ratios.map(r => `
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-700">${r.label}</span>
+            <span class="font-extrabold ${r.ok ? 'text-emerald-600' : 'text-amber-600'}">${r.val}</span>
+          </div>
+          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+            <div class="h-full ${r.ok ? 'bg-emerald-500' : 'bg-amber-500'}" style="width: ${r.pct}%"></div>
+          </div>
+          <div class="flex justify-between text-[11px] text-slate-500">
+            <span>${r.target}</span>
+            <span class="font-semibold ${r.ok ? 'text-emerald-600' : 'text-amber-600'}">${r.ok ? '✓ Tercapai' : 'Perlu Ditingkatkan'}</span>
+          </div>
+        </div>
+      `).join('');
+
+      const expByCat = {};
+      filteredTx.filter(t => t.type === 'expense').forEach(t => {
+        expByCat[t.category] = (expByCat[t.category] || 0) + t.amount;
+      });
+      const sortedCats = Object.entries(expByCat).sort((a, b) => b[1] - a[1]);
+      const advisorEl = document.getElementById('advisor-list');
+      if (sortedCats.length === 0) {
+        advisorEl.innerHTML = `<p class="text-xs text-slate-300 col-span-2">Belum ada data pengeluaran yang dianalisis. Tambahkan transaksi pengeluaran untuk melihat saran penghematan otomatis.</p>`;
+      } else {
+        advisorEl.innerHTML = sortedCats.slice(0, 2).map(([cat, amt]) => {
+          const cut25 = Math.round(amt * 0.25);
+          const goldGram = (cut25 / GOLD_PRICE_PER_GRAM).toFixed(2);
+          return `
+            <div class="bg-white/10 border border-white/15 p-3.5 rounded-xl space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-300">Pos Terbesar: ${cat}</span>
+                <span class="text-xs font-extrabold text-white">${formatRp(amt)}</span>
+              </div>
+              <p class="text-xs text-slate-200 leading-relaxed">
+                Jika dikurangi <strong>25%</strong> (${formatRp(cut25)}/bulan), dana tersebut setara tambahan <strong>${goldGram} gram emas</strong> setiap bulan atau mempercepat dana impian bersama.
+              </p>
+            </div>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('tx-count').textContent = filteredTx.length + ' transaksi';
+      document.getElementById('tx-list').innerHTML = filteredTx.length === 0
+        ? `<p class="text-xs text-slate-400 py-6 text-center">Belum ada transaksi tercatat.</p>`
+        : filteredTx.map(t => `
+          <div class="py-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm ${t.type === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+                ${t.type === 'income' ? '+' : '-'}
+              </div>
+              <div>
+                <p class="text-sm font-bold text-slate-800">${t.note}</p>
+                <p class="text-xs text-slate-500">${t.category} • <span class="font-semibold text-teal-700">${t.user === 'Hafidz' ? 'Mas Hafidz' : 'Mbak Vinna'}</span> • ${t.date}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sm font-extrabold ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}">
+                ${t.type === 'income' ? '+' : '-'}${formatRp(t.amount)}
+              </span>
+              <button onclick="deleteTransaction(${t.id})" class="text-xs text-slate-400 hover:text-rose-600">✕</button>
+            </div>
+          </div>
+        `).join('');
+
+      document.getElementById('goals-list').innerHTML = state.goals.map(g => {
+        const totalSaved = g.hafidz + g.vinna;
+        const pct = Math.min(100, Math.round((totalSaved / g.target) * 100));
+        const hPct = totalSaved > 0 ? Math.round((g.hafidz / totalSaved) * 100) : 50;
+        const vPct = 100 - hPct;
+        return `
+          <div class="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="font-bold text-slate-800 text-sm">${g.name}</h4>
+                <p class="text-xs text-slate-500">Terkumpul <strong>${formatRp(totalSaved)}</strong> dari ${formatRp(g.target)}</p>
+              </div>
+              <button onclick="deleteGoal(${g.id})" class="text-xs text-slate-400 hover:text-rose-600">Hapus</button>
+            </div>
+            <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-teal-600 h-full" style="width: ${pct}%"></div>
+            </div>
+            <div class="flex justify-between text-[11px] font-semibold text-slate-600">
+              <span>👨🏻 Mas Hafidz: ${formatRp(g.hafidz)} (${hPct}%)</span>
+              <span>👩🏻 Mbak Vinna: ${formatRp(g.vinna)} (${vPct}%)</span>
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button onclick="contributeGoal(${g.id}, 'hafidz')" class="flex-1 bg-white border border-slate-200 hover:border-teal-500 text-xs font-bold py-1.5 rounded-xl text-slate-700">+ Isi (Hafidz)</button>
+              <button onclick="contributeGoal(${g.id}, 'vinna')" class="flex-1 bg-white border border-slate-200 hover:border-teal-500 text-xs font-bold py-1.5 rounded-xl text-slate-700">+ Isi (Vinna)</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('shopping-list').innerHTML = state.shopping.map(s => `
+        <div class="py-2.5 flex items-center justify-between gap-2">
+          <label class="flex items-center gap-2.5 cursor-pointer">
+            <input type="checkbox" ${s.bought ? 'checked' : ''} onchange="toggleShopping(${s.id})" class="w-4 h-4 accent-teal-600 rounded" />
+            <span class="text-sm ${s.bought ? 'line-through text-slate-400' : 'font-semibold text-slate-800'}">${s.name}</span>
+          </label>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-600">${formatRp(s.est)}</span>
+            <button onclick="deleteShopping(${s.id})" class="text-xs text-slate-400 hover:text-rose-600">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('bills-list').innerHTML = state.bills.map(b => `
+        <div class="py-2.5 flex items-center justify-between gap-2">
+          <div>
+            <p class="text-sm font-bold ${b.paid ? 'line-through text-slate-400' : 'text-slate-800'}">${b.name}</p>
+            <p class="text-xs text-slate-500">Jatuh tempo tgl ${b.dueDay} • ${formatRp(b.amount)}</p>
+          </div>
+          <button onclick="toggleBill(${b.id})" class="text-xs font-bold px-3 py-1.5 rounded-xl ${b.paid ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}">
+            ${b.paid ? '✓ Lunas' : 'Tandai Lunas'}
+          </button>
+        </div>
+      `).join('');
+
+      const mult = Number(document.getElementById('ef-multiplier').value) || 6;
+      const baseExpense = totalExpense > 0 ? totalExpense : 2500000;
+      const efTarget = baseExpense * mult;
+      const efGap = Math.max(0, efTarget - emergencyAssets);
+      const monthlySurplus = Math.max(0, totalIncome - totalExpense);
+      document.getElementById('ef-target-val').textContent = formatRp(efTarget);
+      document.getElementById('ef-current-val').textContent = formatRp(emergencyAssets);
+      document.getElementById('ef-eta-val').textContent = efGap === 0
+        ? '🎉 Target Dana Darurat Tercapai!'
+        : monthlySurplus > 0
+          ? '± ' + Math.ceil(efGap / monthlySurplus) + ' bulan lagi (kurang ' + formatRp(efGap) + ')'
+          : 'Kurang ' + formatRp(efGap) + ' — sisihkan surplus bulanan';
+
+      document.getElementById('assets-list').innerHTML = state.assets.map(a => `
+        <div class="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">${a.type}</span>
+            <h4 class="font-bold text-slate-800 text-sm mt-1">${a.name}</h4>
+            <p class="text-base font-extrabold text-slate-900 mt-0.5">${formatRp(a.amount)}</p>
+            ${a.type === 'Emas' ? `<p class="text-xs text-amber-700 font-semibold">Setara ± ${(a.amount / GOLD_PRICE_PER_GRAM).toFixed(2)} gram emas</p>` : ''}
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <button onclick="topupAsset(${a.id})" class="bg-teal-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl">+ Top Up</button>
+            <button onclick="deleteAsset(${a.id})" class="text-[11px] text-slate-400 hover:text-rose-600">Hapus</button>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('debts-list').innerHTML = state.debts.map(d => {
+        const pct = Math.min(100, Math.round((d.paid / d.total) * 100));
+        const rem = Math.max(0, d.total - d.paid);
+        return `
+          <div class="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 space-y-2.5">
+            <div class="flex justify-between items-center">
+              <h4 class="font-bold text-slate-800 text-sm">${d.name}</h4>
+              <span class="text-xs font-bold text-rose-600">Sisa: ${formatRp(rem)}</span>
+            </div>
+            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-full" style="width: ${pct}%"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs text-slate-500">
+              <span>Cicilan: <strong>${formatRp(d.monthly)}/bln</strong> (${pct}% lunas)</span>
+              ${rem > 0 ? `<button onclick="payDebtInstallment(${d.id})" class="bg-slate-800 text-white font-bold px-3 py-1 rounded-lg">Bayar 1x</button>` : `<span class="text-emerald-600 font-bold">LUNAS</span>`}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      renderBekal();
+      renderCharts(expByCat, totalIncome, totalExpense);
+    }
+
+    function renderCharts(expByCat = {}, totalIncome = 0, totalExpense = 0) {
+      const ctx1 = document.getElementById('expenseChart');
+      const ctx2 = document.getElementById('cashflowChart');
+      if (!ctx1 || !ctx2) return;
+
+      if (expenseChartInstance) expenseChartInstance.destroy();
+      if (cashflowChartInstance) cashflowChartInstance.destroy();
+
+      const labels = Object.keys(expByCat);
+      const data = Object.values(expByCat);
+
+      expenseChartInstance = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: labels.length ? labels : ['Belum Ada Pengeluaran'],
+          datasets: [{
+            data: data.length ? data : [1],
+            backgroundColor: ['#0f766e', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6', '#10b981', '#f43f5e']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+      });
+
+      cashflowChartInstance = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: ['Pemasukan', 'Pengeluaran', 'Selisih / Tabungan'],
+          datasets: [{
+            label: 'Nominal (Rp)',
+            data: [totalIncome, totalExpense, Math.max(0, totalIncome - totalExpense)],
+            backgroundColor: ['#10b981', '#f43f5e', '#0f766e'],
+            borderRadius: 8
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
+
+    // Initialize
+    updateUserUI();
+    setTxType('expense');
+    calculateAllocation();
+    renderAll();
+    initGun();
+  </script>
+</body>
+</html>
